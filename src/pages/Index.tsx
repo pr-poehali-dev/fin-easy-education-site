@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface NewsItem {
   id: number;
@@ -42,11 +43,13 @@ interface Achievement {
 }
 
 const Index = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('home');
   const [userScore, setUserScore] = useState(250);
   const [currentQuiz, setCurrentQuiz] = useState<number | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [completedTests, setCompletedTests] = useState(12);
+  const [prevLevel, setPrevLevel] = useState(Math.floor(250 / 100) + 1);
   const [expenses, setExpenses] = useState<Expense[]>([
     { id: 1, category: 'Продукты', amount: 15000, date: '2025-10-15' },
     { id: 2, category: 'Транспорт', amount: 5000, date: '2025-10-18' },
@@ -203,11 +206,71 @@ const Index = () => {
   const xpForNextLevel = ((userLevel) * 100);
   const xpProgress = ((userScore % 100) / 100) * 100;
 
+  useEffect(() => {
+    if (userLevel > prevLevel) {
+      toast({
+        title: "🎉 Новый уровень!",
+        description: `Поздравляем! Вы достигли уровня ${userLevel}`,
+        duration: 5000,
+      });
+      setPrevLevel(userLevel);
+    }
+  }, [userLevel, prevLevel, toast]);
+
+  const checkAchievements = (newScore: number, newTestCount: number) => {
+    if (newTestCount === 1 && completedTests === 0) {
+      toast({
+        title: "🏆 Достижение получено!",
+        description: "Первые шаги - Пройдите первый тест",
+        duration: 5000,
+      });
+    }
+    if (newTestCount === 10 && completedTests < 10) {
+      toast({
+        title: "🏆 Достижение получено!",
+        description: "Знаток финансов - Пройдите 10 тестов",
+        duration: 5000,
+      });
+    }
+    if (newScore >= 500 && userScore < 500) {
+      toast({
+        title: "🏆 Достижение получено!",
+        description: "Мастер накоплений - Наберите 500 баллов опыта",
+        duration: 5000,
+      });
+    }
+    if (newScore >= 1000 && userScore < 1000) {
+      toast({
+        title: "🏆 Достижение получено!",
+        description: "Легенда - Наберите 1000 баллов опыта",
+        duration: 5000,
+      });
+    }
+  };
+
   const handleAnswerSubmit = (questionId: number) => {
     const question = quizQuestions.find(q => q.id === questionId);
     if (question && selectedAnswer === question.correctAnswer) {
-      setUserScore(prev => prev + question.points);
-      setCompletedTests(prev => prev + 1);
+      const newScore = userScore + question.points;
+      const newTestCount = completedTests + 1;
+      
+      setUserScore(newScore);
+      setCompletedTests(newTestCount);
+      
+      toast({
+        title: "✅ Правильный ответ!",
+        description: `+${question.points} XP получено`,
+        duration: 3000,
+      });
+      
+      checkAchievements(newScore, newTestCount);
+    } else {
+      toast({
+        title: "❌ Неправильно",
+        description: "Попробуйте еще раз!",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
     setCurrentQuiz(null);
     setSelectedAnswer(null);
