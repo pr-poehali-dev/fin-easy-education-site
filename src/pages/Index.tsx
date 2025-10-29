@@ -42,6 +42,21 @@ interface Achievement {
   maxProgress: number;
 }
 
+interface Currency {
+  code: string;
+  name: string;
+  value: number;
+  previous: number;
+  change: number;
+}
+
+interface Crypto {
+  code: string;
+  name: string;
+  value: number;
+  change_24h: number;
+}
+
 const Index = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('home');
@@ -50,11 +65,32 @@ const Index = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [completedTests, setCompletedTests] = useState(12);
   const [prevLevel, setPrevLevel] = useState(Math.floor(250 / 100) + 1);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [crypto, setCrypto] = useState<Crypto[]>([]);
+  const [ratesLoading, setRatesLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([
     { id: 1, category: 'Продукты', amount: 15000, date: '2025-10-15' },
     { id: 2, category: 'Транспорт', amount: 5000, date: '2025-10-18' },
     { id: 3, category: 'Развлечения', amount: 8000, date: '2025-10-20' }
   ]);
+
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        setRatesLoading(true);
+        const response = await fetch('https://functions.poehali.dev/b4bf2fc9-ba84-4a6e-a3b0-d69ff2665f40');
+        const data = await response.json();
+        setCurrencies(data.currencies || []);
+        setCrypto(data.crypto || []);
+      } catch (error) {
+        console.error('Failed to fetch rates:', error);
+      } finally {
+        setRatesLoading(false);
+      }
+    };
+
+    fetchRates();
+  }, []);
 
   const newsItems: NewsItem[] = [
     {
@@ -84,6 +120,20 @@ const Index = () => {
       description: 'Не храните все яйца в одной корзине. Распределение капитала между разными активами снижает риски и повышает стабильность портфеля.',
       category: 'Риски',
       icon: 'Layers'
+    },
+    {
+      id: 5,
+      title: 'Правило 72',
+      description: 'Разделите 72 на годовую процентную ставку — получите количество лет, за которое ваши деньги удвоятся. При 10% годовых это произойдёт за 7.2 года.',
+      category: 'Инвестиции',
+      icon: 'Calculator'
+    },
+    {
+      id: 6,
+      title: 'Инфляция съедает сбережения',
+      description: 'При инфляции 5% через 14 лет покупательная способность ваших денег уменьшится вдвое. Важно инвестировать, а не просто хранить деньги.',
+      category: 'Экономика',
+      icon: 'TrendingDown'
     }
   ];
 
@@ -472,6 +522,84 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="news" className="space-y-6 animate-fade-in">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Icon name="DollarSign" size={24} />
+                    Курсы валют ЦБ
+                  </CardTitle>
+                  <CardDescription className="text-green-100">
+                    Обновляется ежедневно
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {ratesLoading ? (
+                    <div className="space-y-3">
+                      <div className="h-16 bg-white/20 rounded-lg animate-pulse"></div>
+                      <div className="h-16 bg-white/20 rounded-lg animate-pulse"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {currencies.map((currency) => (
+                        <div key={currency.code} className="p-3 bg-white/20 backdrop-blur rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold text-lg">{currency.code}</span>
+                            <span className="text-2xl font-bold">{currency.value.toFixed(2)} ₽</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-green-100">{currency.name}</span>
+                            <span className={`flex items-center gap-1 ${currency.change >= 0 ? 'text-yellow-300' : 'text-red-300'}`}>
+                              <Icon name={currency.change >= 0 ? 'TrendingUp' : 'TrendingDown'} size={16} />
+                              {currency.change >= 0 ? '+' : ''}{currency.change.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Icon name="Bitcoin" size={24} />
+                    Криптовалюты
+                  </CardTitle>
+                  <CardDescription className="text-orange-100">
+                    Актуальные курсы
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {ratesLoading ? (
+                    <div className="space-y-3">
+                      <div className="h-16 bg-white/20 rounded-lg animate-pulse"></div>
+                      <div className="h-16 bg-white/20 rounded-lg animate-pulse"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {crypto.map((coin) => (
+                        <div key={coin.code} className="p-3 bg-white/20 backdrop-blur rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold text-lg">{coin.code}</span>
+                            <span className="text-2xl font-bold">${coin.value.toLocaleString('en-US')}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-orange-100">{coin.name}</span>
+                            <span className={`flex items-center gap-1 ${coin.change_24h >= 0 ? 'text-yellow-300' : 'text-red-300'}`}>
+                              <Icon name={coin.change_24h >= 0 ? 'TrendingUp' : 'TrendingDown'} size={16} />
+                              {coin.change_24h >= 0 ? '+' : ''}{coin.change_24h.toFixed(2)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl font-heading">

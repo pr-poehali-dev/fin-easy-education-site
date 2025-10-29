@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Get currency and crypto rates",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
