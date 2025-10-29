@@ -31,11 +31,22 @@ interface Expense {
   date: string;
 }
 
+interface Achievement {
+  id: number;
+  title: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  progress: number;
+  maxProgress: number;
+}
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [userScore, setUserScore] = useState(250);
   const [currentQuiz, setCurrentQuiz] = useState<number | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [completedTests, setCompletedTests] = useState(12);
   const [expenses, setExpenses] = useState<Expense[]>([
     { id: 1, category: 'Продукты', amount: 15000, date: '2025-10-15' },
     { id: 2, category: 'Транспорт', amount: 5000, date: '2025-10-18' },
@@ -131,10 +142,72 @@ const Index = () => {
     { name: 'Елена С.', score: 390, rank: 4 }
   ].sort((a, b) => b.score - a.score);
 
+  const achievements: Achievement[] = [
+    {
+      id: 1,
+      title: 'Первые шаги',
+      description: 'Пройдите первый тест',
+      icon: 'Star',
+      unlocked: true,
+      progress: 1,
+      maxProgress: 1
+    },
+    {
+      id: 2,
+      title: 'Знаток финансов',
+      description: 'Пройдите 10 тестов',
+      icon: 'BookOpen',
+      unlocked: true,
+      progress: 12,
+      maxProgress: 10
+    },
+    {
+      id: 3,
+      title: 'Мастер накоплений',
+      description: 'Наберите 500 баллов опыта',
+      icon: 'Trophy',
+      unlocked: false,
+      progress: 250,
+      maxProgress: 500
+    },
+    {
+      id: 4,
+      title: 'Планировщик',
+      description: 'Добавьте 20 расходов в планер',
+      icon: 'Calendar',
+      unlocked: false,
+      progress: 3,
+      maxProgress: 20
+    },
+    {
+      id: 5,
+      title: 'Эксперт экономики',
+      description: 'Прочитайте все экономические факты',
+      icon: 'Lightbulb',
+      unlocked: false,
+      progress: 0,
+      maxProgress: 4
+    },
+    {
+      id: 6,
+      title: 'Легенда',
+      description: 'Наберите 1000 баллов опыта',
+      icon: 'Crown',
+      unlocked: false,
+      progress: 250,
+      maxProgress: 1000
+    }
+  ];
+
+  const userLevel = Math.floor(userScore / 100) + 1;
+  const xpForNextLevel = ((userLevel) * 100);
+  const xpProgress = ((userScore % 100) / 100) * 100;
+
   const handleAnswerSubmit = (questionId: number) => {
     const question = quizQuestions.find(q => q.id === questionId);
     if (question && selectedAnswer === question.correctAnswer) {
       setUserScore(prev => prev + question.points);
+      setCompletedTests(prev => prev + 1);
     }
     setCurrentQuiz(null);
     setSelectedAnswer(null);
@@ -180,6 +253,26 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="home" className="space-y-8 animate-fade-in">
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="text-sm text-purple-100 mb-1">Ваш уровень</div>
+                    <div className="text-4xl font-bold font-heading flex items-center gap-2">
+                      <Icon name="Zap" size={32} />
+                      Уровень {userLevel}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-purple-100 mb-1">Опыт</div>
+                    <div className="text-2xl font-bold">{userScore} / {xpForNextLevel} XP</div>
+                  </div>
+                </div>
+                <Progress value={xpProgress} className="h-4 bg-purple-300" />
+                <p className="text-sm text-purple-100 mt-2">До следующего уровня: {xpForNextLevel - userScore} XP</p>
+              </CardContent>
+            </Card>
+
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white overflow-hidden hover:shadow-2xl transition-all hover-scale">
                 <CardHeader>
@@ -202,7 +295,7 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-5xl font-bold font-heading">12</div>
+                  <div className="text-5xl font-bold font-heading">{completedTests}</div>
                   <p className="text-blue-100 mt-2">Средний балл: 85%</p>
                 </CardContent>
               </Card>
@@ -210,16 +303,71 @@ const Index = () => {
               <Card className="border-0 shadow-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white overflow-hidden hover:shadow-2xl transition-all hover-scale">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-white">
-                    <Icon name="Wallet" size={24} />
-                    Бюджет месяца
+                    <Icon name="Award" size={24} />
+                    Достижения
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-5xl font-bold font-heading">{budgetUsage.toFixed(0)}%</div>
-                  <p className="text-orange-100 mt-2">Использовано</p>
+                  <div className="text-5xl font-bold font-heading">{achievements.filter(a => a.unlocked).length}/{achievements.length}</div>
+                  <p className="text-orange-100 mt-2">Получено наград</p>
                 </CardContent>
               </Card>
             </div>
+
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl font-heading">
+                  <Icon name="Target" size={28} className="text-purple-600" />
+                  Достижения
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Выполняйте задания и получайте награды
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {achievements.map((achievement, index) => (
+                    <div
+                      key={achievement.id}
+                      className={`p-4 rounded-xl border-2 transition-all animate-slide-up ${
+                        achievement.unlocked
+                          ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400 shadow-lg'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          achievement.unlocked
+                            ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white'
+                            : 'bg-gray-200 text-gray-400'
+                        }`}>
+                          <Icon name={achievement.icon} size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-semibold font-heading">{achievement.title}</h4>
+                            {achievement.unlocked && (
+                              <Badge className="bg-yellow-500 text-white border-0">
+                                <Icon name="Check" size={14} className="mr-1" />
+                                Получено
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
+                          {!achievement.unlocked && (
+                            <div className="space-y-1">
+                              <Progress value={(achievement.progress / achievement.maxProgress) * 100} className="h-2" />
+                              <p className="text-xs text-gray-500">{achievement.progress} / {achievement.maxProgress}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
               <CardHeader>
