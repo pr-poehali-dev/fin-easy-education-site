@@ -68,6 +68,8 @@ const Index = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [crypto, setCrypto] = useState<Crypto[]>([]);
   const [ratesLoading, setRatesLoading] = useState(true);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([
     { id: 1, category: 'Продукты', amount: 15000, date: '2025-10-15' },
     { id: 2, category: 'Транспорт', amount: 5000, date: '2025-10-18' },
@@ -89,53 +91,24 @@ const Index = () => {
       }
     };
 
+    const fetchNews = async () => {
+      try {
+        setNewsLoading(true);
+        const response = await fetch('https://functions.poehali.dev/1812db9c-d821-4ff6-917f-637d973897d3');
+        const data = await response.json();
+        setNewsItems(data.facts || []);
+      } catch (error) {
+        console.error('Failed to fetch news:', error);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+
     fetchRates();
+    fetchNews();
   }, []);
 
-  const newsItems: NewsItem[] = [
-    {
-      id: 1,
-      title: 'Правило 50/30/20',
-      description: 'Оптимальное распределение доходов: 50% на необходимое, 30% на желаемое, 20% на сбережения. Этот принцип помогает поддерживать финансовый баланс.',
-      category: 'Базовые принципы',
-      icon: 'PieChart'
-    },
-    {
-      id: 2,
-      title: 'Сила сложного процента',
-      description: 'Если инвестировать 10,000₽ ежемесячно под 12% годовых, через 20 лет накопится более 10 млн рублей. Время — ваш главный союзник в инвестициях.',
-      category: 'Инвестиции',
-      icon: 'TrendingUp'
-    },
-    {
-      id: 3,
-      title: 'Подушка безопасности',
-      description: 'Эксперты рекомендуют иметь запас средств на 3-6 месяцев жизни. Это защитит вас от непредвиденных обстоятельств и даст финансовую стабильность.',
-      category: 'Накопления',
-      icon: 'Shield'
-    },
-    {
-      id: 4,
-      title: 'Диверсификация рисков',
-      description: 'Не храните все яйца в одной корзине. Распределение капитала между разными активами снижает риски и повышает стабильность портфеля.',
-      category: 'Риски',
-      icon: 'Layers'
-    },
-    {
-      id: 5,
-      title: 'Правило 72',
-      description: 'Разделите 72 на годовую процентную ставку — получите количество лет, за которое ваши деньги удвоятся. При 10% годовых это произойдёт за 7.2 года.',
-      category: 'Инвестиции',
-      icon: 'Calculator'
-    },
-    {
-      id: 6,
-      title: 'Инфляция съедает сбережения',
-      description: 'При инфляции 5% через 14 лет покупательная способность ваших денег уменьшится вдвое. Важно инвестировать, а не просто хранить деньги.',
-      category: 'Экономика',
-      icon: 'TrendingDown'
-    }
-  ];
+
 
   const quizQuestions: QuizQuestion[] = [
     {
@@ -613,30 +586,50 @@ const Index = () => {
             </Card>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {newsItems.map((item, index) => (
-                <Card
-                  key={item.id}
-                  className="border-0 shadow-lg bg-white hover:shadow-2xl transition-all hover-scale cursor-pointer overflow-hidden animate-slide-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <Badge className="mb-2 bg-purple-100 text-purple-700 border-0">
-                          {item.category}
-                        </Badge>
-                        <CardTitle className="text-xl font-heading flex items-center gap-2">
-                          <Icon name={item.icon} size={24} className="text-purple-600" />
-                          {item.title}
-                        </CardTitle>
+              {newsLoading ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <Card key={index} className="border-0 shadow-lg bg-white overflow-hidden">
+                    <CardHeader>
+                      <div className="space-y-3">
+                        <div className="h-6 bg-gray-200 rounded animate-pulse w-24"></div>
+                        <div className="h-8 bg-gray-200 rounded animate-pulse w-3/4"></div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 leading-relaxed">{item.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                newsItems.map((item, index) => (
+                  <Card
+                    key={item.id}
+                    className="border-0 shadow-lg bg-white hover:shadow-2xl transition-all hover-scale cursor-pointer overflow-hidden animate-slide-up"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <Badge className="mb-2 bg-purple-100 text-purple-700 border-0">
+                            {item.category}
+                          </Badge>
+                          <CardTitle className="text-xl font-heading flex items-center gap-2">
+                            <Icon name={item.icon} size={24} className="text-purple-600" />
+                            {item.title}
+                          </CardTitle>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
